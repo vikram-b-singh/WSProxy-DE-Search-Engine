@@ -1,0 +1,96 @@
+<script runat="server"> 
+  Platform.Load('Core', '1');
+  var q = Request.GetQueryStringParameter("DEName") || '';
+  var query = q.replace(/\s/g, '%');
+  
+  var prox = new Script.Util.WSProxy();
+  var req = prox.retrieve("DataExtension", ["Name","CategoryID"], {
+    LeftOperand: {
+      Property: 'Name',
+      SimpleOperator: 'like',
+      Value: query
+    }
+    ,
+    LogicalOperator: 'OR',
+    RightOperand: {
+      Property: 'CustomerKey',
+      SimpleOperator: 'equals',
+      Value: query
+    }
+  }
+                         );
+  //Write("Retrived request :"+Stringify(req));
+  for (var i = 0; i<req.Results.length ; i++){ 
+    if (i == 0) {
+      Write("<table><tr><th>DE NAME</th><th> FOLDER ID </th><th>PATH</th></tr>"+ "\n");
+            }
+   
+            var list = [req.Results[i].Name];
+            var id = req.Results[i].CategoryID;
+    Write("<tr><td>"+list+"</td><td>"+id+"</td>");
+           
+      while(id > 0) {
+        var res = prox.retrieve("DataFolder", ["Name","ParentFolder.ID"], {
+          Property: "ID", 
+          SimpleOperator: "equals", 
+          Value: id 
+        }
+                               );
+        list.unshift(res.Results[0].Name);
+        id = res.Results[0].ParentFolder.ID;
+      }
+      var result = list.join(" -->");
+    Write("<td>"+result+"</td></tr>");
+      
+    }
+  Write("</table>");
+</script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DE folders Search Page
+    </title>
+  </head>
+  <style>
+     table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        
+      }
+      td, th {
+        border: 1px solid #100f0f;
+        text-align: left;
+        padding: 8px;
+      }
+    h2 {
+      height: 200px;
+      width: 400px;
+      text-align: center;
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      margin-top: -100px;
+      margin-left: -200px;
+    }
+    div {
+     
+      text-align: center;
+     
+    }
+  </style>
+  <body>
+    <div>
+      <form method = "post">
+        <label for="DEName">Enter DE Name :</label>
+        <input type="text" name="DEName" id="DEName" required>
+        <br>
+        <br>
+        <input type="hidden" name = "submitted" id = "submitted" value = "submitted">
+        <input type="submit" value = "Search">
+      </form>
+    </div>
+  </body>
+</html>
+
